@@ -1,0 +1,6 @@
+[package]
+name = "sasm"
+version = "0.1.0"
+authors = ["Alexander Theißen <alex@theissen.io>"]
+
+[dependencies]
