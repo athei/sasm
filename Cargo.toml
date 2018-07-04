@@ -4,4 +4,4 @@ version = "0.1.0"
 authors = ["Alexander Theißen <alex@theissen.io>"]
 
 [dependencies]
-yew = "0.4.0"
+yew = { git = "https://github.com/DenisKolodin/yew.git" }

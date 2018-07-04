@@ -11,21 +11,21 @@ pub enum Msg {
     Input,
 }
 
-impl Component<Self> for Model {
+impl Component for Model {
     type Message = Msg;
     type Properties = ();
 
-    fn create(_: Self::Properties, _: &mut Env<Self, Self>) -> Self {
+    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
         Model { value: 3 }
     }
 
-    fn update(&mut self, _: Self::Message, _: &mut Env<Self, Self>) -> ShouldRender {
+    fn update(&mut self, _: Self::Message) -> ShouldRender {
         true
     }
 }
 
-impl Renderable<Self, Self> for Model {
-    fn view(&self) -> Html<Self, Self> {
+impl Renderable<Self> for Model {
+    fn view(&self) -> Html<Self> {
         html! {
             <div>
                     <button onclick=|_| Msg::Input,>{ "Clear Database" }</button>
