@@ -5,3 +5,4 @@ authors = ["Alexander Theißen <alex@theissen.io>"]
 
 [dependencies]
 yew = { git = "https://github.com/DenisKolodin/yew.git" }
+stdweb = "0.4.7"
