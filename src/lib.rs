@@ -10,6 +10,7 @@ use yew::prelude::*;
 pub struct Model {
     state: State,
     simc: Option<Value>,
+    profile: String,
 }
 
 enum State {
@@ -22,6 +23,7 @@ enum State {
 pub enum Msg {
     Button,
     Loaded,
+    ProfileUpdate(String)
 }
 
 impl Component for Model {
@@ -29,11 +31,16 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        Model { simc: None, state: State::Unloaded }
+        Model { simc: None, state: State::Unloaded, profile: "".into() }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
+            Msg::Loaded => self.state.engine_loaded(),
+            Msg::ProfileUpdate(profile) => {
+                self.profile = profile;
+                false
+            }
             Msg::Button => {
                 if !self.state.button_press() {
                     return false;
@@ -51,7 +58,6 @@ impl Component for Model {
                 }
                 true
             },
-            Msg::Loaded => self.state.engine_loaded(),
         }
     }
 }
@@ -60,7 +66,7 @@ impl Renderable<Self> for Model {
     fn view(&self) -> Html<Self> {
         html! {
             <div>
-                <textarea rows="30", cols="50",>{ "BLUB" }</textarea>
+                <textarea placeholder="Enter simc profile.", rows="30", cols="50", oninput=|e| Msg::ProfileUpdate(e.value),></textarea>
                 <button disabled=self.state.button_disabled(), onclick=|_| Msg::Button,>{ self.state.button_text() }</button>
                 <a id="engine_loaded", onclick=|_| Msg::Loaded,></a>
             </div>
