@@ -9,7 +9,7 @@ use yew::prelude::*;
 
 pub struct Model {
     state: State,
-    simc: Option<Value>
+    simc: Option<Value>,
 }
 
 enum State {
@@ -21,6 +21,7 @@ enum State {
 
 pub enum Msg {
     Button,
+    Loaded,
 }
 
 impl Component for Model {
@@ -31,19 +32,22 @@ impl Component for Model {
         Model { simc: None, state: State::Unloaded }
     }
 
-    fn update(&mut self, _: Self::Message) -> ShouldRender {
-        if !self.state.button_press() {
-            return false;
-        }
-
-        match self.state {
-            State::Loading => {
-                self.simc = Some(js! { return Simc() })
+    fn update(&mut self, msg: Self::Message) -> ShouldRender {
+        match msg {
+            Msg::Button => {
+                if !self.state.button_press() {
+                    return false;
+                }
+                match self.state {
+                    State::Loading => {
+                        self.simc = Some(js! { return Simc() })
+                    },
+                    _ => ()
+                }
+                true
             },
-            _ => ()
+            Msg::Loaded => self.state.engine_loaded(),
         }
-
-        true
     }
 }
 
@@ -53,6 +57,7 @@ impl Renderable<Self> for Model {
             <div>
                 <textarea rows="30", cols="50",>{ "BLUB" }</textarea>
                 <button disabled=self.state.button_disabled(), onclick=|_| Msg::Button,>{ self.state.button_text() }</button>
+                <a id="engine_loaded", onclick=|_| Msg::Loaded,></a>
             </div>
         }
     }
@@ -86,6 +91,16 @@ impl State {
         match self {
             State::Loading => true,
             State::Simulating => true,
+            _ => false,
+        }
+    }
+
+    fn engine_loaded(&mut self) -> bool {
+        match self {
+            State::Loading => {
+                *self = State::Idle;
+                true
+            },
             _ => false,
         }
     }
