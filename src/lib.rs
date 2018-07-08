@@ -42,6 +42,11 @@ impl Component for Model {
                     State::Loading => {
                         self.simc = Some(js! { return Simc() })
                     },
+                    State::Simulating => {
+                        js! {
+                            @{&self.simc}._simulate()
+                        }
+                    },
                     _ => ()
                 }
                 true
