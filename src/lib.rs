@@ -30,7 +30,9 @@ impl Component for Model {
     type Message = Msg;
     type Properties = ();
 
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
+        let press_button = link.send_back(|_| Msg::Button);
+        press_button.emit(());
         Model { simc: None, state: State::Unloaded, profile: "".into() }
     }
 
