@@ -51,7 +51,9 @@ impl Component for Model {
                     },
                     State::Simulating => {
                         js! {
-                            @{&self.simc}._simulate()
+                            var ptr = @{&self.simc}.allocateUTF8(@{&self.profile});
+                            @{&self.simc}._simulate(ptr);
+                            @{&self.simc}._free(ptr);
                         }
                     },
                     _ => ()
