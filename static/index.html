@@ -3,13 +3,6 @@
 <head>
     <meta charset="utf-8" />
     <title>sasm - simc wasm</title>
-    <script>
-        window.addEventListener("message", function (e) {
-            if (e.origin == window.origin && e.data.event == "simc_loaded") {
-                document.getElementById("engine_loaded").click();
-            }
-        });
-    </script>
 </head>
 <body>
     <script src="engine.js"></script>

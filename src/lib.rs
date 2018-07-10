@@ -3,7 +3,10 @@ extern crate yew;
 #[macro_use]
 extern crate stdweb;
 
-use stdweb::Value;
+use std::collections::HashMap;
+
+use stdweb::unstable::*;
+use stdweb::*;
 
 use yew::prelude::*;
 
@@ -23,9 +26,17 @@ enum State {
 
 pub enum Msg {
     Button,
-    Loaded,
-    ProfileUpdate(String),
     SimDone,
+    ProfileUpdate(String),
+    WindowEvent(HashMap<String, Value>),
+}
+
+fn receive_message(js_event: Value, clb: &Callback<HashMap<String, Value>>) {
+    let event = match HashMap::<String, Value>::try_from(js_event) {
+        Ok(map) => map,
+        _ => return,
+    };
+    clb.emit(event);
 }
 
 impl Component for Model {
@@ -33,14 +44,30 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        link.send_back(|_| Msg::Button).emit(());
-        Model { link, simc: None, state: State::Unloaded, profile: "".into() }
+        let model = Model { link, simc: None, state: State::Unloaded, profile: "".into() };
+
+        // we click the load button for the user on startup
+        model.link.send_back(|_| Msg::Button).emit(());
+
+        // Map a window event to a Msg
+        let send_window_event = model.link.send_back(|event: HashMap<String, Value>| Msg::WindowEvent(event));
+        let closure = move |e: Value| {
+            receive_message(e, &send_window_event);
+        };
+        js! {
+            window.addEventListener("message", function (e) {
+                if (e.origin != window.origin)
+                    return;
+                @{closure}(e.data);
+            });
+        }
+
+        model
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::SimDone => self.state.sim_done(),
-            Msg::Loaded => self.state.engine_loaded(),
             Msg::ProfileUpdate(profile) => {
                 self.profile = profile;
                 false
@@ -65,6 +92,16 @@ impl Component for Model {
                 }
                 true
             },
+            Msg::WindowEvent(event) => {
+                let name = match event.get("event").and_then(|v| v.as_str()) {
+                    Some(event) => event,
+                    _ => return false,
+                };
+                match name {
+                    "simc_loaded" => self.state.engine_loaded(),
+                    _ => false,
+                }
+            },
         }
     }
 }
@@ -75,7 +112,6 @@ impl Renderable<Self> for Model {
             <div>
                 <textarea placeholder="Enter simc profile.", rows="30", cols="50", oninput=|e| Msg::ProfileUpdate(e.value),></textarea>
                 <button disabled=self.state.button_disabled(), onclick=|_| Msg::Button,>{ self.state.button_text() }</button>
-                <a id="engine_loaded", onclick=|_| Msg::Loaded,></a>
             </div>
         }
     }
