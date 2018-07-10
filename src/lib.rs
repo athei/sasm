@@ -8,6 +8,7 @@ use stdweb::Value;
 use yew::prelude::*;
 
 pub struct Model {
+    link: ComponentLink<Model>,
     state: State,
     simc: Option<Value>,
     profile: String,
@@ -23,7 +24,8 @@ enum State {
 pub enum Msg {
     Button,
     Loaded,
-    ProfileUpdate(String)
+    ProfileUpdate(String),
+    SimDone,
 }
 
 impl Component for Model {
@@ -31,13 +33,13 @@ impl Component for Model {
     type Properties = ();
 
     fn create(_: Self::Properties, link: ComponentLink<Self>) -> Self {
-        let press_button = link.send_back(|_| Msg::Button);
-        press_button.emit(());
-        Model { simc: None, state: State::Unloaded, profile: "".into() }
+        link.send_back(|_| Msg::Button).emit(());
+        Model { link, simc: None, state: State::Unloaded, profile: "".into() }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
+            Msg::SimDone => self.state.sim_done(),
             Msg::Loaded => self.state.engine_loaded(),
             Msg::ProfileUpdate(profile) => {
                 self.profile = profile;
@@ -57,6 +59,7 @@ impl Component for Model {
                             @{&self.simc}._simulate(ptr);
                             @{&self.simc}._free(ptr);
                         }
+                        self.link.send_back(|_| Msg::SimDone).emit(());
                     },
                     _ => ()
                 }
@@ -113,6 +116,16 @@ impl State {
     fn engine_loaded(&mut self) -> bool {
         match self {
             State::Loading => {
+                *self = State::Idle;
+                true
+            },
+            _ => false,
+        }
+    }
+
+    fn sim_done(&mut self) -> bool {
+        match self {
+            State::Simulating => {
                 *self = State::Idle;
                 true
             },
