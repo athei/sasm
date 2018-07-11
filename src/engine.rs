@@ -49,8 +49,8 @@ impl Agent for Engine {
             receive_message(e, &send_window_event);
         };
         js! {
-            window.addEventListener("message", function (e) {
-                if (e.origin != window.origin)
+            self.addEventListener("message", function (e) {
+                if (e.origin != self.origin)
                     return;
                 @{closure}(e.data);
             });
