@@ -1,4 +1,4 @@
-#!/usr/local/bin/python3
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -23,7 +23,18 @@ for f in files:
 
 # serve these files from deploy directory
 print('Serving at http://localhost:8888')
+
+class NoCacheHandler(server.SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_my_headers()
+        server.SimpleHTTPRequestHandler.end_headers(self)
+
+    def send_my_headers(self):
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        self.send_header("Pragma", "no-cache")
+        self.send_header("Expires", "0")
+
 os.chdir(deploy_dir)
-server.SimpleHTTPRequestHandler.extensions_map['.wasm'] = 'application/wasm'
-httpd = server.HTTPServer(('localhost', 8888), server.SimpleHTTPRequestHandler)
+NoCacheHandler.extensions_map['.wasm'] = 'application/wasm'
+httpd = server.HTTPServer(('localhost', 8888), NoCacheHandler)
 httpd.serve_forever()
