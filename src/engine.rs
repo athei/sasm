@@ -38,10 +38,12 @@ fn receive_message(js_event: Value, clb: &Callback<HashMap<String, Value>>) {
 }
 
 impl Agent for Engine {
-    type Reach = Job;
+    type Reach = Public;
     type Message = Msg;
     type Input = Request;
     type Output = Response;
+
+    fn name_of_resource() -> &'static str { "thread_engine.js" }
 
     fn create(link: AgentLink<Self>) -> Self {
         let send_window_event = link.send_back(|event: HashMap<String, Value>| Msg::WindowMessage(event));

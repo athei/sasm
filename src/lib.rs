@@ -6,7 +6,8 @@ extern crate stdweb;
 extern crate serde_derive;
 extern crate serde;
 
-mod engine;
+pub mod engine;
+
 use yew::prelude::*;
 
 pub struct Model {
