@@ -1,8 +1,5 @@
-use std::collections::HashMap;
-use stdweb::unstable::*;
 use stdweb::*;
 use yew::prelude::worker::*;
-use yew::prelude::Callback;
 
 pub struct Engine {
     link: AgentLink<Engine>,
@@ -26,15 +23,7 @@ pub enum Response {
 impl Transferable for Response {}
 
 pub enum Msg {
-    WindowMessage(HashMap<String, Value>),
-}
-
-fn receive_message(js_event: Value, clb: &Callback<HashMap<String, Value>>) {
-    let event = match HashMap::<String, Value>::try_from(js_event) {
-        Ok(map) => map,
-        _ => return,
-    };
-    clb.emit(event);
+    LoadDone
 }
 
 impl Agent for Engine {
@@ -46,36 +35,28 @@ impl Agent for Engine {
     fn name_of_resource() -> &'static str { "thread_engine.js" }
 
     fn create(link: AgentLink<Self>) -> Self {
-        let send_window_event = link.send_back(|event: HashMap<String, Value>| Msg::WindowMessage(event));
-        let closure = move |e: Value| {
-            receive_message(e, &send_window_event);
+        let send_loaded = link.send_back(|_| Msg::LoadDone);
+        let closure = move || {
+            send_loaded.emit(());
         };
         js! {
-            self.addEventListener("message", function (e) {
-                if (e.origin != self.origin)
-                    return;
-                @{closure}(e.data);
-            });
+            self.simc_callbacks = {
+                "loaded": function(e) {
+                    @{closure}();
+                }
+            };
+            importScripts("engine.js");
         }
         Engine { link, simc: None, owner: None, loaded: false }
     }
 
     fn update(&mut self, msg: Self::Message) {
         match msg {
-            Msg::WindowMessage(msg) => {
-                let name = match msg.get("event").and_then(|v| v.as_str()) {
-                    Some(msg) => msg,
-                    _ => return,
-                };
-                match name {
-                    "simc_loaded" => {
-                        self.loaded = true;
-                        self.link.response(self.owner.unwrap(), Response::LoadDone);
-                    }
-                    _ => (),
-                }
+            Msg::LoadDone => {
+                self.loaded = true;
+                self.link.response(self.owner.unwrap(), Response::LoadDone);
             },
-        }
+        };
     }
 
     fn handle(&mut self, input: Self::Input, id: HandlerId) {

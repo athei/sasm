@@ -17,6 +17,7 @@ pub struct Model {
 }
 
 enum State {
+    Init,
     Loading,
     Idle,
     Simulating,
@@ -41,11 +42,7 @@ impl Component for Model {
             }
         });
         let engine = engine::Engine::bridge(callback);
-        let mut model = Model { state: State::Loading, profile: "".into(), engine };
-
-        model.engine.send(engine::Request::Load);
-
-        model
+        Model { state: State::Init, profile: "".into(), engine }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
@@ -61,6 +58,10 @@ impl Component for Model {
                     return false;
                 }
                 match self.state {
+                    State::Loading => {
+                        self.engine.send(engine::Request::Load);
+                        true
+                    },
                     State::Simulating => {
                         self.engine.send(engine::Request::Simulate(self.profile.clone()));
                         true
@@ -86,6 +87,7 @@ impl Renderable<Self> for Model {
 impl State {
     fn button_text(&self) -> &str {
         match self {
+            State::Init => "Load Engine",
             State::Loading => "Loading Engine...",
             State::Idle => "Start Simulation",
             State::Simulating => "Simulating...",
@@ -94,6 +96,10 @@ impl State {
 
     fn button_press(&mut self) -> bool {
         match self {
+            State::Init => {
+                *self = State::Loading;
+                true
+            },
             State::Idle => {
                 *self = State::Simulating;
                 true
@@ -104,9 +110,10 @@ impl State {
 
     fn button_disabled(&self) -> bool {
         match self {
+            State::Init => false,
             State::Loading => true,
+            State::Idle => false,
             State::Simulating => true,
-            _ => false,
         }
     }
 
