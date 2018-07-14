@@ -1,4 +1,5 @@
 use stdweb::*;
+use stdweb::unstable::*;
 use yew::prelude::worker::*;
 
 pub struct Engine {
@@ -68,12 +69,15 @@ impl Agent for Engine {
             }
             Request::Simulate(profile) => {
                 assert!(self.loaded);
-                js! {
-                    var ptr = @{&self.simc}.allocateUTF8(@{&profile});
-                    @{&self.simc}._simulate(ptr);
-                    @{&self.simc}._free(ptr);
-                }
-                self.link.response(id, Response::SimulationDone("123".into()));
+                let result = js! {
+                    var ptr_in = @{&self.simc}.allocateUTF8(@{&profile});
+                    var ptr_out = @{&self.simc}._simulate(ptr_in);
+                    @{&self.simc}._free(ptr_in);
+                    var result = @{&self.simc}.UTF8ToString(ptr_out);
+                    @{&self.simc}._free(ptr_out);
+                    return result;
+                };
+                self.link.response(id, Response::SimulationDone(result.try_into().unwrap()));
             }
         }
     }

@@ -10,9 +10,12 @@ pub mod engine;
 
 use yew::prelude::*;
 
+const DEFAULT_PROFILE: &str = "mage=moerrer\niterations=10000";
+
 pub struct Model {
     state: State,
     profile: String,
+    result: String,
     engine: Box<Bridge<engine::Engine>>,
 }
 
@@ -26,7 +29,7 @@ enum State {
 pub enum Msg {
     Loaded,
     Button,
-    SimDone,
+    SimDone(String),
     ProfileUpdate(String),
 }
 
@@ -38,17 +41,23 @@ impl Component for Model {
         let callback = link.send_back(|response| {
             match response {
                 engine::Response::LoadDone => Msg::Loaded,
-                engine::Response::SimulationDone(_) => Msg::SimDone,
+                engine::Response::SimulationDone(result) => Msg::SimDone(result),
             }
         });
         let engine = engine::Engine::bridge(callback);
-        Model { state: State::Init, profile: "".into(), engine }
+        Model { state: State::Init, profile: DEFAULT_PROFILE.into(), result: "".into(), engine }
     }
 
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::Loaded => self.state.engine_loaded(),
-            Msg::SimDone => self.state.sim_done(),
+            Msg::SimDone(result) => {
+                if !self.state.sim_done() {
+                    return false;
+                }
+                self.result = result;
+                true
+            }
             Msg::ProfileUpdate(profile) => {
                 self.profile = profile;
                 false
@@ -63,6 +72,7 @@ impl Component for Model {
                         true
                     },
                     State::Simulating => {
+                        self.result = "".into();
                         self.engine.send(engine::Request::Simulate(self.profile.clone()));
                         true
                     }
@@ -77,7 +87,12 @@ impl Renderable<Self> for Model {
     fn view(&self) -> Html<Self> {
         html! {
             <div>
-                <textarea placeholder="Enter simc profile.", rows="30", cols="50", oninput=|e| Msg::ProfileUpdate(e.value),></textarea>
+                <textarea placeholder="Enter simc profile.", rows="30", cols="50", oninput=|e| Msg::ProfileUpdate(e.value),>
+                    { &self.profile }
+                </textarea>
+                <textarea placeholder="Result", rows="30", cols="50", disabled=true,>
+                    { &self.result }
+                </textarea>
                 <button disabled=self.state.button_disabled(), onclick=|_| Msg::Button,>{ self.state.button_text() }</button>
             </div>
         }
