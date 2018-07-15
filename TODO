@@ -1,2 +1,9 @@
 - kompilierten wasm cachen
     - override instantiate method emscripten
+
+- Direkt laden beim starten
+    - Möglichkeit festzustellen, wenn public worker geladen
+        - Agent seine Brückenersteller geben
+        - TODO in agent.rs: Use a queue to collect a messages if an instance is not ready
+
+
