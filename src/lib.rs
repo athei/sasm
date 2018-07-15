@@ -90,7 +90,7 @@ impl Renderable<Self> for Model {
                 <textarea placeholder="Enter simc profile.", rows="30", cols="50", oninput=|e| Msg::ProfileUpdate(e.value),>
                     { &self.profile }
                 </textarea>
-                <textarea placeholder="Result", rows="30", cols="50", disabled=true,>
+                <textarea placeholder="Result", rows="30", cols="50", readonly=true,>
                     { &self.result }
                 </textarea>
                 <button disabled=self.state.button_disabled(), onclick=|_| Msg::Button,>{ self.state.button_text() }</button>
