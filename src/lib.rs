@@ -10,7 +10,7 @@ pub mod engine;
 
 use yew::prelude::*;
 
-const DEFAULT_PROFILE: &str = "mage=moerrer\niterations=10000";
+const DEFAULT_PROFILE: &str = "";
 
 pub struct Model {
     state: State,
@@ -31,6 +31,7 @@ pub enum Msg {
     Button,
     SimDone(String),
     ProfileUpdate(String),
+    ProgressUpdate(engine::Progress),
 }
 
 impl Component for Model {
@@ -42,6 +43,7 @@ impl Component for Model {
             match response {
                 engine::Response::LoadDone => Msg::Loaded,
                 engine::Response::SimulationDone(result) => Msg::SimDone(result),
+                engine::Response::ProgressUpdate(p) => Msg::ProgressUpdate(p),
             }
         });
         let engine = engine::Engine::bridge(callback);
@@ -51,6 +53,13 @@ impl Component for Model {
     fn update(&mut self, msg: Self::Message) -> ShouldRender {
         match msg {
             Msg::Loaded => self.state.engine_loaded(),
+            Msg::ProgressUpdate(p) => {
+                let out = format!("{:?}", p);
+                js! {
+                    console.log(@{&out});
+                };
+                true
+            },
             Msg::SimDone(result) => {
                 if !self.state.sim_done() {
                     return false;

@@ -19,13 +19,26 @@ impl Transferable for Request {}
 #[derive(Serialize, Deserialize)]
 pub enum Response {
     LoadDone,
+    ProgressUpdate(Progress),
     SimulationDone(String),
 }
 impl Transferable for Response {}
 
 pub enum Msg {
-    LoadDone
+    LoadDone,
+    ProgressUpdate(Progress),
 }
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Progress {
+    iteration: u32,
+    total_iterations: u32,
+    phase: u32,
+    total_phases: u32,
+    phase_name: String,
+    subphase_name: String,
+}
+js_deserializable!(Progress);
 
 impl Agent for Engine {
     type Reach = Public;
@@ -37,13 +50,21 @@ impl Agent for Engine {
 
     fn create(link: AgentLink<Self>) -> Self {
         let send_loaded = link.send_back(|_| Msg::LoadDone);
-        let closure = move || {
+        let send_progress = link.send_back(|p| Msg::ProgressUpdate(p));
+        let closure_loaded = move || {
             send_loaded.emit(());
+        };
+        let closure_progress = move |p: Value| {
+            let progress = p.try_into().unwrap();
+            send_progress.emit(progress);
         };
         js! {
             self.simc_callbacks = {
-                "loaded": function(e) {
-                    @{closure}();
+                "loaded": function() {
+                    @{closure_loaded}();
+                },
+                "update_progress": function(progress) {
+                    @{closure_progress}(progress)
                 }
             };
             importScripts("engine.js");
@@ -56,6 +77,9 @@ impl Agent for Engine {
             Msg::LoadDone => {
                 self.loaded = true;
                 self.link.response(self.owner.unwrap(), Response::LoadDone);
+            },
+            Msg::ProgressUpdate(progress) => {
+                self.link.response(self.owner.unwrap(), Response::ProgressUpdate(progress))
             },
         };
     }
